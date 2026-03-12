@@ -638,7 +638,9 @@ export default {
     "costumeName": "Retired Legend",
     "spine": "char003604",
     "cutscene": "cutscene_char003604",
-    "dating": ""
+    "dating": "illust_dating16",
+    "datingHasNoBg": false,
+    "datingUsesTracks": true
   },
   "003701": {
     "charName": "Blade",
@@ -727,6 +729,13 @@ export default {
     "dating": "illust_dating13",
     "datingHasNoBg": false,
     "datingUsesTracks": true
+  },
+  "004201": {
+    "charName": "Palette",
+    "costumeName": "Shattered Dream",
+    "spine": "char004201",
+    "cutscene": "cutscene_char004201",
+    "dating": ""
   },
   "020001": {
     "charName": "Eris",

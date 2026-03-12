@@ -1,5 +1,16 @@
 export default [
   {
+    "date": "12/03/2026",
+    "changes": [
+      "Added Palette: Shattered Dream character icon.",
+      "Added Palette: Shattered Dream standing animations.",
+      "Added Palette: Shattered Dream ultimate animations.",
+      "Added Olivier: Retired Legend fated guest animations.",
+      "Updated Zenith: Stranger Bunny fated guest animations.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
     "date": "26/02/2026",
     "changes": [
       "Added Olivier: Retired Legend character icon.",
