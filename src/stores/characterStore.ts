@@ -9,6 +9,7 @@ export interface Character {
   spine: string
   cutscene: string
   dating: string
+  icon: string,
   datingHasNoBg?: boolean,
   datingUsesTracks?: boolean,
   customFiles?: {
@@ -23,6 +24,7 @@ const characterArray: Character[] = Object.entries(character_list).map(([id, cha
   id,
   datingHasNoBg: true,
   datingUsesTracks: false,
+  icon: id,
   ...char,
 }))
 

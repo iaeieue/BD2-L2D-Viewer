@@ -1,5 +1,15 @@
 export default [
   {
+    "date": "26/03/2026",
+    "changes": [
+      "Added Helena: Rising Star and Mamonir: Night of Death character icons.",
+      "Added Helena: Rising Star and Mamonir: Night of Death standing animations.",
+      "Added Helena: Rising Star and Mamonir: Night of Death ultimate animations.",
+      "Added the censored models for Seir: Demon's Daughter, Seir: B-Rank Idol, Rou: Red Hat and Refithea: Pure White Blessing.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
     "date": "12/03/2026",
     "changes": [
       "Added Palette: Shattered Dream character icon.",

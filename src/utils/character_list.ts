@@ -62,12 +62,28 @@ export default {
     "cutscene": "cutscene_char101101",
     "dating": ""
   },
+  "101101_c": {
+    "charName": "Seir",
+    "costumeName": "Demon's Daughter (Censored)",
+    "spine": "char101101_c",
+    "cutscene": "",
+    "dating": "",
+    "icon": "101101"
+  },
   "101102": {
     "charName": "Seir",
     "costumeName": "B-Rank Idol",
     "spine": "char101102",
     "cutscene": "cutscene_char101102",
     "dating": ""
+  },
+  "101102_c": {
+    "charName": "Seir",
+    "costumeName": "B-Rank Idol (Censored)",
+    "spine": "char101102_c",
+    "cutscene": "",
+    "dating": "",
+    "icon": "101102"
   },
   "101103": {
     "charName": "Seir",
@@ -336,6 +352,14 @@ export default {
     "spine": "char000502",
     "cutscene": "cutscene_char000502",
     "dating": ""
+  },
+  "000502_c": {
+    "charName": "Rou",
+    "costumeName": "Red Hat (Censored)",
+    "spine": "char000502_c",
+    "cutscene": "",
+    "dating": "",
+    "icon": "000502"
   },
   "000504": {
     "charName": "Rou",
@@ -927,6 +951,13 @@ export default {
     "cutscene": "cutscene_char061002",
     "dating": ""
   },
+  "061092": {
+    "charName": "Helena",
+    "costumeName": "Rising Star",
+    "spine": "char061092",
+    "cutscene": "cutscene_char061092_A",
+    "dating": ""
+  },
   "061101": {
     "charName": "Eleaneer",
     "costumeName": "Piercing Magic Bow",
@@ -1076,6 +1107,14 @@ export default {
     "spine": "char066802",
     "cutscene": "cutscene_char066802",
     "dating": ""
+  },
+  "066802_c": {
+    "charName": "Refithea",
+    "costumeName": "Pure White Blessing (Censored)",
+    "spine": "char066802_c",
+    "cutscene": "",
+    "dating": "",
+    "icon": "066802"
   },
   "066803": {
     "charName": "Refithea",
@@ -1248,6 +1287,13 @@ export default {
     "cutscene": "cutscene_char067702",
     "dating": ""
   },
+  "067801": {
+    "charName": "Mamonir",
+    "costumeName": "Night of Death",
+    "spine": "char067801",
+    "cutscene": "cutscene_char067801",
+    "dating": ""
+  },
   "minigame1": {
     "charName": "Minigame",
     "costumeName": "Slap Slap Pop",
@@ -1261,6 +1307,7 @@ export default {
   spine: string,
   cutscene: string,
   dating: string,
+  icon?: string,
   datingHasNoBg?: boolean,
   datingUsesTracks?: boolean
 } }
