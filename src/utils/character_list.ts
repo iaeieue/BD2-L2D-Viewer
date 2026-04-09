@@ -845,6 +845,13 @@ export default {
     "cutscene": "cutscene_char020901",
     "dating": ""
   },
+  "021001": {
+    "charName": "Ikaruga",
+    "costumeName": "Noble Flame",
+    "spine": "char021001",
+    "cutscene": "cutscene_char021001",
+    "dating": ""
+  },
   "060301": {
     "charName": "Alec",
     "costumeName": "The Destruction",
