@@ -16,14 +16,22 @@
       >
         <BgEditIcon />
       </button>
-      <button
-        ref="datingToggleRef"
-        v-show="store.characters.find(c => c.id === store.selectedCharacterId)?.datingHasNoBg && store.animationCategory === 'dating'"
-        @click="store.showDatingBg = !store.showDatingBg"
-        class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors"
-      >
-        <BgToggleIcon :active="store.showDatingBg" />
-      </button>
+      <div class="flex flex-row gap-2">
+        <button
+          ref="datingToggleRef"
+          v-show="store.characters.find(c => c.id === store.selectedCharacterId)?.datingHasNoBg && store.animationCategory === 'dating'"
+          @click="store.showDatingBg = !store.showDatingBg"
+          class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors"
+        >
+          <BgToggleIcon :active="store.showDatingBg" />
+        </button>
+        <button
+          @click="store.layerSelectionEnabled = !store.layerSelectionEnabled"
+          class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors"
+        >
+          <LayerSelectIcon :active="store.layerSelectionEnabled" />
+        </button>
+      </div>
     </div>
     <div ref="viewerWrapper" class="relative w-full h-full">
       <div class="absolute inset-0 overflow-hidden" :style="backgroundContainerStyle">
@@ -59,7 +67,14 @@
           @pointerdown.stop.prevent="event => onResizeHandlePointerDown(handle, event as PointerEvent)"
         />
       </div>
-      <div ref="container" class="absolute inset-0 z-10"></div>
+      <div ref="container" class="absolute inset-0 z-10" @pointerdown="onViewerPointerDown"></div>
+      <canvas ref="overlayCanvas" class="absolute inset-0 z-20 pointer-events-none"></canvas>
+    </div>
+    <div
+      v-if="store.selectedLayerName"
+      class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-4 py-3 rounded-full z-50 pointer-events-none shadow-lg shadow-black/50 text-sm border border-gray-700 backdrop-blur-sm transition-opacity"
+    >
+      Selected Layer: <span class="font-bold text-indigo-400">{{ store.selectedLayerName }}</span>
     </div>
     <input
       type="range"
@@ -80,6 +95,7 @@ import { useCharacterStore } from '@/stores/characterStore'
 import {
   SpinePlayer,
   Vector2,
+  Vector3,
   CameraController,
   OrthoCamera,
   GLTexture,
@@ -92,6 +108,7 @@ import type { SpinePlayerInternal } from '@/types/spine-player-internal'
 
 import BgEditIcon from '@/components/icons/BgEditIcon.vue'
 import BgToggleIcon from '@/components/icons/BgToggleIcon.vue'
+import LayerSelectIcon from '@/components/icons/LayerSelectIcon.vue'
 
 type ResizeHandle = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
 type SpineSlot = {
@@ -99,6 +116,7 @@ type SpineSlot = {
   color?: { a: number }
   darkColor?: { a: number }
   setAttachment?: (attachment: unknown) => void
+  getAttachment?: () => unknown
   attachment?: unknown
 }
 
@@ -110,6 +128,7 @@ const datingToggleRef = ref<HTMLButtonElement | null>(null)
 const backgroundImageWrapperRef = ref<HTMLDivElement | null>(null)
 const backgroundOverlayRef = ref<HTMLDivElement | null>(null)
 const backgroundImageEl = ref<HTMLImageElement | null>(null)
+const overlayCanvas = ref<HTMLCanvasElement | null>(null)
 
 const progress = ref(0)
 const store = useCharacterStore()
@@ -848,6 +867,7 @@ async function load() {
         }
       }
       applyLayerVisibility(player?.skeleton ?? null)
+      drawOverlay()
     },
     success: (p: SpinePlayer) => {
       const skeleton = p.skeleton ?? null
@@ -1064,6 +1084,12 @@ watch(() => store.showDatingBg, () => {
   void load()
 })
 
+watch(() => store.layerSelectionEnabled, enabled => {
+  if (!enabled) {
+    store.selectedLayerName = null
+  }
+})
+
 watch(showingMobileOverlay, value => {
   if (value) {
     editingBackground.value = false
@@ -1071,7 +1097,161 @@ watch(showingMobileOverlay, value => {
   updateCanvasPointerEvents()
 })
 
+function isPointInPolygon(px: number, py: number, vertices: Float32Array): boolean {
+  let inside = false
+  for (let i = 0, j = vertices.length - 2; i < vertices.length; j = i, i += 2) {
+    const xi = vertices[i], yi = vertices[i + 1]
+    const xj = vertices[j], yj = vertices[j + 1]
+    const intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+    if (intersect) inside = !inside
+  }
+  return inside
+}
+
+function getCameraState() {
+  const renderCam = player?.sceneRenderer?.camera
+  if (!renderCam) return null
+  return {
+    cx: renderCam.position.x,
+    cy: renderCam.position.y,
+    zoom: renderCam.zoom,
+    vw: renderCam.viewportWidth,
+    vh: renderCam.viewportHeight
+  }
+}
+
+function onViewerPointerDown(e: PointerEvent) {
+  if (!store.layerSelectionEnabled || !player || editingBackground.value) return
+  if (e.button !== 0) return
+
+  const bounds = viewerWrapper.value?.getBoundingClientRect()
+  if (!bounds) return
+  
+  const camState = getCameraState()
+  if (!camState) return
+
+  const screenX = e.clientX - bounds.left
+  const screenY = e.clientY - bounds.top
+
+  const { cx, cy, zoom, vw, vh } = camState
+
+  const nx = (screenX / bounds.width) * 2 - 1
+  const ny = 1 - 2 * (screenY / bounds.height)
+
+  const wx = nx * (vw / 2) * zoom + cx
+  const wy = ny * (vh / 2) * zoom + cy
+
+  const slots = player.skeleton?.drawOrder
+  if (!slots) return
+
+  for (let i = slots.length - 1; i >= 0; i--) {
+    const slot = slots[i] as unknown as SpineSlot
+    if (store.layerVisibility[slot.data.name] === false) continue
+
+    const attachment = slot.getAttachment?.() as any
+    const vertexCount = attachment?.worldVerticesLength ?? 0
+
+    if (vertexCount > 0 && typeof attachment.computeWorldVertices === 'function') {
+      const worldVertices = new Float32Array(vertexCount)
+      attachment.computeWorldVertices(slot, 0, vertexCount, worldVertices, 0, 2)
+      if (isPointInPolygon(wx, wy, worldVertices)) {
+        if (store.selectedLayerName !== slot.data.name) {
+          store.selectedLayerName = slot.data.name
+        } else {
+          store.selectedLayerName = null
+        }
+        return
+      }
+    }
+  }
+  store.selectedLayerName = null
+}
+
+function drawOverlay() {
+  const canvas = overlayCanvas.value
+  if (!canvas || !viewerWrapper.value || !player) return
+
+  const rect = viewerWrapper.value.getBoundingClientRect()
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width
+    canvas.height = rect.height
+  }
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  const selectedLayer = store.selectedLayerName
+  if (!selectedLayer || !store.layerSelectionEnabled) return
+
+  const skeleton = player.skeleton
+  if (!skeleton) return
+  
+  const slots = skeleton.slots as unknown as SpineSlot[]
+  const slot = slots.find(s => s.data.name === selectedLayer)
+  if (!slot || store.layerVisibility[selectedLayer] === false) return
+
+  const attachment = slot.getAttachment?.() as any
+  const vertexCount = attachment?.worldVerticesLength ?? 0
+  if (vertexCount > 0 && typeof attachment.computeWorldVertices === 'function') {
+    const worldVertices = new Float32Array(vertexCount)
+    attachment.computeWorldVertices(slot, 0, vertexCount, worldVertices, 0, 2)
+
+    const camState = getCameraState()
+    if (!camState) return
+    const { cx, cy, zoom, vw, vh } = camState
+
+    ctx.beginPath()
+    for (let i = 0; i < worldVertices.length; i += 2) {
+       const wx = worldVertices[i]
+       const wy = worldVertices[i+1]
+       
+       const nx = ((wx - cx) / zoom) / (vw / 2)
+       const ny = ((wy - cy) / zoom) / (vh / 2)
+
+       const screenX = (nx + 1) * 0.5 * canvas.width
+       const screenY = (1 - (ny + 1) * 0.5) * canvas.height
+
+       if (i === 0) ctx.moveTo(screenX, screenY)
+       else ctx.lineTo(screenX, screenY)
+    }
+    ctx.closePath()
+    ctx.strokeStyle = '#818cf8' // indigo-400
+    ctx.lineWidth = 2
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+    ctx.fillStyle = 'rgba(79, 70, 229, 0.4)' // indigo-600 with opacity
+    ctx.fill()
+  }
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+  const key = e.key.toLowerCase()
+
+  if (key === 'h') {
+    if (store.selectedLayerName) {
+      store.layerVisibility[store.selectedLayerName] = false
+      store.hiddenLayerStack.push(store.selectedLayerName)
+      store.selectedLayerName = null
+    }
+  } else if (key === 'u') {
+    if (store.hiddenLayerStack.length > 0) {
+      const last = store.hiddenLayerStack.pop()!
+      store.layerVisibility[last] = true
+      store.selectedLayerName = last
+    }
+  } else if (e.key === 'Escape') {
+    while (store.hiddenLayerStack.length > 0) {
+      const last = store.hiddenLayerStack.pop()!
+      store.layerVisibility[last] = true
+    }
+    store.selectedLayerName = null
+  }
+}
+
 onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
   ensureResizeObserver()
   if (activeBackgroundSrc.value) {
     setBackgroundSource(activeBackgroundSrc.value)
@@ -1080,6 +1260,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDown)
   stopPointerTracking()
   if (resizeObserver && viewerWrapper.value) {
     resizeObserver.unobserve(viewerWrapper.value)
