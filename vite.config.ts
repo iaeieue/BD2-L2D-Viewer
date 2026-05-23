@@ -12,5 +12,5 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
-  base: './'
+  base: './BD2-L2D-Viewer'
 })
