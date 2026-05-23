@@ -1321,7 +1321,7 @@ export default {
     "charName": "Mamonir",
     "costumeName": "Miracle Marine",
     "spine": "char067803",
-    "cutscene": "",
+    "cutscene": "cutscene_char067803",
     "dating": ""
   },
   "minigame1": {
